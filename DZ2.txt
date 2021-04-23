@@ -1,0 +1,34 @@
+Практическое задание по теме “Управление БД”
+1. Установите СУБД MySQL. Создайте в домашней директории файл .my.cnf, задав в нем логин и пароль, который указывался при установке.
+[mysql]
+user=root
+password=***
+or
+mysql -u root -p -без файла.
+2. Создайте базу данных example, разместите в ней таблицу users, состоящую из двух столбцов, числового id и строкового name.
+mysql    
+CREATE DATABASE example;
+USE example;
+CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255) COMMENT 'Имя пользователя');
+SHOP TABLES;
+3. Создайте дамп базы данных example из предыдущего задания, разверните содержимое дампа в новую базу данных sample.
+CREATE DATABASE sample;
+exit
+mysqldump example > sample.sql
+dir
+mysql sample < sample.sql  
+mysql
+USE sample;
+SHOW TABLES;
+or
+SHOW DATABASES;
+DESCRIBE users;
+
+4. (по желанию) Ознакомьтесь более подробно с документацией утилиты mysqldump. Создайте дамп единственной таблицы help_keyword базы данных mysql. 
+Причем добейтесь того, чтобы дамп содержал только первые 100 строк таблицы.
+mysqldump --where="1 LIMIT 100" mysql help_keyword > help_keyword_100.sql
+Потом посмотрела урок 3 и увидела, что не доставала 1=1 или TRUE >>
+mysqldump --where="TRUE LIMIT 100" mysql help_keyword > help_keyword_100.sql
+
+
+

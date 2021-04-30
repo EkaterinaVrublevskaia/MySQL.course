@@ -1,0 +1,165 @@
+Урок 4. Вебинар. CRUD-операции
+Практическое задание по теме “CRUD - операции”
+1.Повторить все действия по доработке структуры БД vk и данных.
+
+USE vk;
+
+SHOW TABLES;
+
+SELECT * FROM users; 
+
+SELECT * FROM users WHERE created_at > updated_at; 
+
+UPDATE users SET updated_at = NOW() WHERE created_at > updated_at; 
+
+SELECT * FROM profiles LIMIT 10;
+
+UPDATE profiles SET updated_at = NOW() WHERE created_at > updated_at; 
+
+SELECT * FROM profiles WHERE created_at > updated_at; 
+
+-- пол:
+
+-- UPDATE profiles SET gender = '';
+
+-- CREATE TEMPORARY TABLE gender (name CHAR(1));
+
+-- INSERT INTO gender VALUES ('F'), ('M');
+
+-- SELECT name FROM gender ORDER BY RAND() LIMIT 1;
+
+-- UPDATE profiles SET gender = (SELECT name FROM gender ORDER BY RAND() LIMIT 1);
+
+SELECT * FROM messages LIMIT 10;
+
+SELECT FLOOR(1+ RAND() *100);
+
+UPDATE messages SET
+  from_user_id = FLOOR(1 + RAND() * 100),
+  to_user_id = FLOOR(1 + RAND() * 100);
+ 
+SELECT * FROM messages WHERE from_user_id = to_user_id;
+
+UPDATE messages SET to_user_id = to_user_id +1 WHERE from_user_id = to_user_id;
+
+SELECT * FROM media LIMIT 10;
+
+UPDATE media SET updated_at = NOW() WHERE created_at > updated_at; 
+
+UPDATE media SET
+  user_id = FLOOR(1 + RAND() * 100);
+
+ -- http://dropbox.com/vk/filename.ext
+ 
+ -- DROP TABLE filename;
+
+UPDATE media SET filename = '';
+
+CREATE TEMPORARY TABLE filename (name CHAR(10));
+
+INSERT INTO filename VALUES ('Audio'), ('Video'), ('Image'), ('Ivi'), ('Games');
+
+SELECT name FROM filename ORDER BY RAND() LIMIT 1;
+
+UPDATE media SET filename = (SELECT name FROM filename ORDER BY RAND() LIMIT 1);
+ 
+ 
+-- DROP TABLE extensions;
+ 
+CREATE TEMPORARY TABLE extensions (name VARCHAR(10));
+
+INSERT INTO extensions VALUES ('mp4'), ('png'), ('avi'), ('zip');
+
+SELECT * FROM extensions;
+
+UPDATE media SET filename = CONCAT(
+  'http://dropbox.net/vk/',
+  filename,
+  '.',
+  (SELECT name FROM extensions ORDER BY RAND() LIMIT 1))
+;
+
+
+UPDATE media SET size = FLOOR(10000 + (RAND() * 1000000)) WHERE size < 1000;
+
+-- '{"owner": "First Last"}'
+
+UPDATE media SET metadata = CONCAT(
+  '{"owner":"', 
+  (SELECT CONCAT(first_name, ' ', last_name) 
+  FROM users WHERE users.id = media.user_id),
+  '"}'
+  );  
+
+ DESC media;
+
+ALTER TABLE media MODIFY COLUMN metadata JSON;
+
+SELECT * FROM media_types;
+
+DELETE FROM media_types;
+
+INSERT INTO media_types (name) VALUES
+  ('image'),
+  ('video'),
+  ('audio');
+ 
+ TRUNCATE media_types;
+
+UPDATE media SET
+  media_type_id = FLOOR(1 + RAND() * 3);
+ 
+ SELECT * FROM friendship LIMIT 10;
+
+UPDATE friendship SET updated_at = NOW() WHERE created_at > updated_at; 
+
+UPDATE friendship SET 
+  user_id = FLOOR(1 + RAND() * 100),
+  friend_id = FLOOR(1 + RAND() * 100);
+ 
+SELECT * FROM friendship_statuses;
+ 
+TRUNCATE friendship_statuses;
+ 
+INSERT INTO friendship_statuses (name) VALUES
+  ('Requested'),
+  ('Confirmed'),
+  ('Rejected');
+ 
+ UPDATE friendship SET
+  friendship_status_id = FLOOR(1 + RAND() * 3);
+ 
+ SELECT * FROM friendship WHERE created_at > confirmed_at; 
+
+UPDATE friendship SET 
+  confirmed_at = created_at,  
+  created_at = confirmed_at
+  WHERE created_at > confirmed_at;
+ 
+ SELECT * FROM communities;
+
+SELECT * FROM communities WHERE created_at > updated_at; 
+
+UPDATE communities SET updated_at = NOW() WHERE created_at > updated_at; 
+
+
+-- DELETE FROM communities WHERE id > 30; -- у меня 10 групп.
+
+
+SELECT * FROM communities_users;
+
+-- Все время выдает ошибку по ключу. 
+
+UPDATE communities_users SET
+user_id = FLOOR(1 + RAND() * 100),
+community_id = FLOOR(1 + RAND() * 10);
+
+2.Подобрать сервис который будет служить основой для вашей курсовой работы.
+
+Буквоед - https://www.bookvoed.ru  
+
+3.(по желанию) Предложить свою реализацию лайков и постов.
+
+-
+
+

@@ -1,0 +1,165 @@
+Урок 6. Вебинар. Операторы, фильтрация, сортировка и ограничение. Агрегация данных
+Практическое задание по теме “Операторы, фильтрация, сортировка и ограничение. Агрегация данных”
+Работаем с БД vk и тестовыми данными, которые вы сгенерировали ранее:
+
+1. Создать и заполнить таблицы лайков и постов.
+-- Таблица лайков
+DROP TABLE IF EXISTS likes;
+CREATE TABLE likes (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  target_id INT UNSIGNED NOT NULL,
+  target_type ENUM('messages', 'users', 'posts', 'media') NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Временная таблица типов лайков
+DROP TABLE IF EXISTS target_types;
+CREATE TEMPORARY TABLE target_types (
+  name VARCHAR(100) NOT NULL UNIQUE
+);
+
+INSERT INTO target_types (name) VALUES 
+  ('messages'),
+  ('users'),
+  ('media'),
+  ('posts');
+
+-- Заполняем лайки
+INSERT INTO likes 
+  SELECT 
+    id, 
+    FLOOR(1 + (RAND() * 100)), 
+    FLOOR(1 + (RAND() * 100)),
+    (SELECT name FROM target_types ORDER BY RAND() LIMIT 1),
+    CURRENT_TIMESTAMP 
+  FROM messages;
+
+SELECT * FROM likes LIMIT 10;
+
+-- Создадим таблицу постов
+DROP TABLE IF EXISTS posts;
+CREATE TABLE posts (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  community_id INT UNSIGNED,
+  head VARCHAR(255),
+  body TEXT NOT NULL,
+  media_id INT UNSIGNED,
+  is_public BOOLEAN DEFAULT TRUE,
+  is_archived BOOLEAN DEFAULT FALSE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+2. Создать все необходимые внешние ключи и диаграмму отношений.
+
+-- Добавляем внешние ключи в БД vk
+-- Для таблицы профилей
+
+DESC profiles;
+
+ALTER TABLE profiles
+  ADD CONSTRAINT profiles_user_id_fk 
+    FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE;
+          
+-- Для таблицы сообщений
+
+DESC messages;
+
+-- Добавляем внешние ключи
+ALTER TABLE messages
+  ADD CONSTRAINT messages_from_user_id_fk 
+    FOREIGN KEY (from_user_id) REFERENCES users(id),
+  ADD CONSTRAINT messages_to_user_id_fk 
+    FOREIGN KEY (to_user_id) REFERENCES users(id);
+      
+DESC communities_users;
+
+ALTER TABLE communities_users DROP FOREIGN KEY communities_user_id_fk;
+
+ALTER TABLE communities_users
+  ADD CONSTRAINT communities_user_id_fk 
+    FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE,     
+  ADD CONSTRAINT communities_community_id_fk 
+    FOREIGN KEY (community_id) REFERENCES communities(id)
+      ON DELETE CASCADE;
+          
+
+DESC friendship_statuses;
+
+DESC friendship;
+    
+ALTER TABLE friendship
+  ADD CONSTRAINT friendship_user_id_fk 
+    FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE,    
+  ADD CONSTRAINT friendship_friend_id_fk 
+    FOREIGN KEY (friend_id) REFERENCES users(id)
+      ON DELETE CASCADE,    
+  ADD CONSTRAINT friendship_friendship_status_id_fk 
+    FOREIGN KEY (friendship_status_id) REFERENCES friendship_statuses(id)
+      ON DELETE CASCADE;
+     
+DESC media_types;
+
+DESC media;
+
+ALTER TABLE media
+  ADD CONSTRAINT media_user_id_fk 
+    FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE,      
+  ADD CONSTRAINT media_media_type_id_fk 
+    FOREIGN KEY (media_type_id) REFERENCES media_types(id)
+      ON DELETE CASCADE;
+     
+DESC likes;
+
+ALTER TABLE likes
+  ADD CONSTRAINT likes_user_id_fk 
+    FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE;
+
+DESC posts;
+
+ALTER TABLE posts
+  ADD CONSTRAINT posts_user_id_fk 
+    FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE,     
+  ADD CONSTRAINT posts_community_id_fk 
+    FOREIGN KEY (community_id) REFERENCES communities(id)
+      ON DELETE CASCADE,    
+  ADD CONSTRAINT posts_media_id_fk 
+    FOREIGN KEY (media_id) REFERENCES media(id)
+      ON DELETE CASCADE;
+          
+
+3. Определить кто больше поставил лайков (всего) - мужчины или женщины?
+
+SELECT 
+(SELECT gender FROM profiles WHERE likes.user_id = profiles.user_id) AS gender,
+COUNT(id) AS like_user
+FROM likes
+GROUP BY gender;
+
+
+4. Вывести для каждого пользователя количество созданных сообщений, постов, загруженных медиафайлов и поставленных лайков.
+
+ SELECT 
+ user_id, 
+ (select count(messages.id) FROM messages) AS sum_messages,
+ (select COUNT(likes.id) FROM likes) as sum_likes,
+ (SELECT COUNT(media.id) FROM media) as sum_media
+FROM  profiles;
+
+5. (по желанию) Подсчитать количество лайков которые получили 10 самых молодых пользователей.
+
+SELECT
+user_id,
+TIMESTAMPDIFF(YEAR, birthday, NOW()) AS age,
+(SELECT count(likes.id) as res from likes where profiles.user_id = likes.user_id) as res_like
+FROM profiles 
+order by age limit 10;

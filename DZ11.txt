@@ -1,0 +1,152 @@
+рактическое задание по теме “Оптимизация запросов”
+1.Создайте таблицу logs типа Archive. Пусть при каждом создании записи в таблицах users, catalogs 
+и products в таблицу logs помещается время и дата создания записи, название таблицы, идентификатор 
+первичного ключа и содержимое поля name.
+
+DROP TABLE IF EXISTS logs;
+CREATE TABLE logs (
+  id INT  UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  created_at DATETIME NOT NULL,
+  log_name VARCHAR(100) NOT NULL,
+  list_name VARCHAR(255) NOT NULL,
+  list_id INT UNSIGNED NOT NULL
+) ENGINE = Archive;
+
+DELIMITER //
+
+CREATE TRIGGER users_log AFTER INSERT ON users 
+FOR EACH ROW 
+BEGIN
+  INSERT INTO logs 
+    SET 
+      id = NULL,
+      created_at = NOW(),
+      log_name = 'users',
+      list_id = NEW.id,
+      list_name = NEW.name;
+END//
+
+CREATE TRIGGER products_log AFTER INSERT ON products 
+FOR EACH ROW
+BEGIN
+    INSERT INTO logs(id, created_at, log_name, list_id, list_name)
+    VALUES(NULL, NOW(), 'products', NEW.id, NEW.name);
+END//
+
+CREATE TRIGGER catalogs_log AFTER INSERT ON catalogs 
+FOR EACH ROW
+BEGIN
+  INSERT INTO logs VALUES(NULL, NOW(), 'catalogs', NEW.id, NEW.name);
+END//
+
+2.(по желанию) Создайте SQL-запрос, который помещает в таблицу users миллион записей.
+
+DROP TABLE IF EXISTS test_users;
+CREATE TABLE test_users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255),
+  birthday_at DATE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 
+
+INSERT INTO users (name, birthday_at) VALUES
+  ('Геннадий', '1990-10-05'),
+  ('Наталья', '1984-11-12'),
+  ('Александр', '1985-05-20'),
+  ('Сергей', '1988-02-14'),
+  ('Иван', '1998-01-12'),
+  ('Мария', '1992-08-29');
+
+SELECT * FROM test_users;
+
+-- решение
+
+DELIMITER //
+
+DROP PROCEDURE IF EXISTS mln_record//
+
+CREATE PROCEDURE mln_record()
+BEGIN
+  DECLARE v1 INT DEFAULT 1;
+  WHILE v1 <= 1000000 DO
+    INSERT `name` VALUES (v1);
+    SET v1 = v1 + 1;
+  END WHILE;
+END//
+DELIMITER ;
+
+
+Практическое задание по теме “NoSQL”
+1.В базе данных Redis подберите коллекцию для подсчета посещений с определенных IP-адресов.
+--1/
+
+HGET ipaddress '168.192.0.100'
+
+HGETALL ipaddress
+
+2/
+SADD ip '168.192.0.100' '168.192.0.101' '168.192.0.102'
+SCARD ip
+SMEMBERS ip
+
+
+2.При помощи базы данных Redis решите задачу поиска имени пользователя по электронному адресу и
+ наоборот, поиск электронного адреса пользователя по его имени.
+
+HSET email 'Victor' 'VictorTrumov@gmail.com'
+HSET email 'Sasha' 'SashaTr@mail.ru'
+
+HGET email 'Victor'
+
+HSET user 'VictorTrumov@gmail.com' 'Victor'
+HSET user 'SashaTr@mail.ru' 'Sasha'
+
+HGET user 'SashaTr@mail.ru'
+
+
+3.Организуйте хранение категорий и товарных позиций учебной базы данных shop в СУБД MongoDB.
+
+show dbs
+
+use show
+
+-- со вставкой документов:
+
+db.catalogs.insert({'Процессоры'})
+db.catalogs.insert({'Материнские платы'})
+db.catalogs.insert({'Видеокарты'})
+db.catalogs.insert({'Жесткие диски'})
+db.catalogs.insert({'Оперативная память'})
+
+db.products.insert({name: 'Intel Core i3-8100', 
+                    description: 'Процессор для настольных персональных компьютеров, основанных на платформе Intel.',
+                    price: 7890.00, 
+                    catalog_id: 1'});
+
+
+db.products.insert({name: 'Intel Core i5-7400', 
+                    description: 'Процессор для настольных персональных компьютеров, основанных на платформе Intel.',
+                    price: 12700.00, 
+                    catalog_id: new ObjectId("5b49de717aa5dc2548cb5ff8")});
+
+
+db.products.insert({name: 'AMD FX-8320', 
+                    description: 'Процессор для настольных персональных компьютеров, основанных на платформе AMD.',
+                    price: 7120.00, 
+                    catalog_id: new ObjectId("5b49de717aa5dc224acd4sf8")'});
+
+db.products.insert({name: 'Gigabyte H310M S2H', 
+                    description: 'Материнская плата Gigabyte H310M S2H, H310, Socket 1151-V2, DDR4, mATX',
+                    price: 4790.00, 
+                    catalog_id: new ObjectId("5b49de717aa5dc224acb5ss8")});
+
+db.products.insert({name: 'MSI B250M GAMING PRO', 
+                    description: 'Материнская плата MSI B250M GAMING PRO, B250, Socket 1151, DDR4, mATX',
+                    price: 5060.00, 
+                    catalog_id: new ObjectId("5b49de717aa5dc224acb5ff8")});
+
+
+db.shop.find()
